@@ -1,0 +1,86 @@
+#! /usr/bin/env python
+
+# Copyright (c) 2010 Ben Olive
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+## Config
+# Path to the notification icon to use in the sys tray.
+notificationIcon='./icon.png'
+# Port to listen on for notifications
+port=2199
+
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gobject
+import xmlrpclib
+from threading import Thread
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+import os
+
+gtk.gdk.threads_init()
+
+class Notify:
+    def hide(self, widget):
+        self.msg = []
+        self.tray.set_visible(False)
+
+    def delete_event(self, widget, event, data=None):
+        return False
+
+    def destroy(self, widget, data=None):
+        gtk.main_quit()
+
+    def show_message(self, message):
+        self.msg.append(message)
+        self.tray.set_tooltip("\n".join(self.msg))
+        self.tray.set_visible(True)
+        
+    def __init__(self):
+        self.msg = []
+        self.tray = gtk.StatusIcon()
+        self.tray.set_visible(False)
+        self.tray.set_blinking(True)
+        self.tray.set_from_file(notificationIcon)
+        self.tray.connect("activate", self.hide)
+
+    def main(self):
+        gtk.main()
+
+class RPC(Thread):
+    def __init__(self, notify):
+        Thread.__init__(self)
+        self.setDaemon(True)
+        self.notifier = notify
+
+    def run(self):
+        self.server = SimpleXMLRPCServer(("localhost", port))
+        self.server.register_function(self.show, "show")
+        self.server.serve_forever()
+
+    def show(self, msg):
+        gobject.idle_add(self.notifier.show_message, msg)
+        return "ok"
+
+if __name__ == "__main__":
+    n = Notify()
+    r = RPC(n)
+    r.start()
+    n.main()
