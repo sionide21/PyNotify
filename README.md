@@ -33,6 +33,6 @@ Now you can run a long command and add this to the and to get feedback when it i
 	
 ## Issues
 
-Please report any bugs to the [issue tracker][1]
+Please report any bugs to the [issue tracker][1].
 
-[1]: <http://github.com/sionide21/PyNotify/issues> "Issue Tracker".
+[1]: <http://github.com/sionide21/PyNotify/issues> "Issue Tracker" 
