@@ -27,6 +27,10 @@ port=2199
 import xmlrpclib
 import sys
 
+if len(sys.argv) < 2:
+    print "USAGE: %s <message>" % sys.argv[0]
+    sys.exit(-1)
+
 notificationPane = xmlrpclib.ServerProxy("http://localhost:%d" % port)
 sys.argv.pop(0)
 # Use all passed in args as a message
