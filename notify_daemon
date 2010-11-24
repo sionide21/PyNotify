@@ -110,7 +110,7 @@ class UDS(Server):
 if __name__ == "__main__":
 
     # Run this as a daemon
-    if os.fork(): exit(0)
+    if os.fork(): sys.exit(0)
     os.setsid()
     
     sys.stdin.close()
