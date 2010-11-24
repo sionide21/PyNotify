@@ -21,18 +21,31 @@
 # THE SOFTWARE.
 
 ## Config
+# Set to True to use RPC false to use a unix socket
+rpc=False
 # Port to send notifications to
 port=2199
+# File to use for IPC if using Unix Domain Sockets
+ipcFile='~/.pynotify.sock'
 
 import xmlrpclib
 import sys
+import socket
+import os
+
 
 if len(sys.argv) < 2:
     print "USAGE: %s <message>" % sys.argv[0]
     sys.exit(-1)
 
-notificationPane = xmlrpclib.ServerProxy("http://localhost:%d" % port)
 sys.argv.pop(0)
 # Use all passed in args as a message
 message = ' '.join(sys.argv)
-notificationPane.show(message)
+
+if rpc:
+    notificationPane = xmlrpclib.ServerProxy("http://localhost:%d" % port)
+    notificationPane.show(message)
+else:
+    ipcFile=os.path.expanduser(ipcFile)
+    client = socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM)
+    client.sendto('S' + message, ipcFile)

@@ -23,17 +23,26 @@
 ## Config
 # Path to the notification icon to use in the sys tray.
 notificationIcon='./icon.png'
+# Set to true if you want to use RPC for client server comm, 
+# set to false for unix sockets for comm. More information in the readme
+rpc=False
 # Port to listen on for notifications
 port=2199
+# File to use for IPC if using Unix Domain Sockets
+ipcFile='~/.pynotify.sock'
 
 import pygtk
 pygtk.require('2.0')
 import gtk
 import gobject
 import xmlrpclib
-from threading import Thread
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+import socket
+from threading import Thread
 import os
+
+
+ipcFile=os.path.expanduser(ipcFile)
 
 gtk.gdk.threads_init()
 
@@ -64,23 +73,47 @@ class Notify:
     def main(self):
         gtk.main()
 
-class RPC(Thread):
+class Server(Thread):
     def __init__(self, notify):
         Thread.__init__(self)
         self.setDaemon(True)
         self.notifier = notify
+
+    def show(self, msg):
+        gobject.idle_add(self.notifier.show_message, msg)
+        return "ok"
+
+class RPC(Server):
+    def __init__(self, notify):
+        Server.__init__(self, notify)
 
     def run(self):
         self.server = SimpleXMLRPCServer(("localhost", port))
         self.server.register_function(self.show, "show")
         self.server.serve_forever()
 
-    def show(self, msg):
-        gobject.idle_add(self.notifier.show_message, msg)
-        return "ok"
+
+class UDS(Server):
+    def __init__(self, notify):
+        Server.__init__(self, notify)
+
+    def run(self):
+        self.server = socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM)
+        self.server.bind(ipcFile)
+        while True:
+            (cmd, _) = self.server.recvfrom(0x10000)
+            if len(cmd) > 0:
+                if cmd[0] == 'S':
+                    self.show(cmd[1:])
 
 if __name__ == "__main__":
-    n = Notify()
-    r = RPC(n)
-    r.start()
-    n.main()
+    try:
+        n = Notify()
+        if rpc:
+            r = RPC(n)
+        else:
+            r = UDS(n)
+        r.start()
+        n.main()
+    finally:
+        os.unlink(ipcFile)
