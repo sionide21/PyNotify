@@ -40,6 +40,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import socket
 from threading import Thread
 import os
+import sys
 
 
 ipcFile=os.path.expanduser(ipcFile)
@@ -107,6 +108,15 @@ class UDS(Server):
                     self.show(cmd[1:])
 
 if __name__ == "__main__":
+
+    # Run this as a daemon
+    if os.fork(): exit(0)
+    os.setsid()
+    
+    sys.stdin.close()
+    sys.stderr.close()
+    sys.stdout.close()
+
     try:
         n = Notify()
         if rpc:
