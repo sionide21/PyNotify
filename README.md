@@ -30,6 +30,10 @@ Create an alias like the following:
 Now you can run a long command and add this to the and to get feedback when it is done.
 
 	command_that_takes_a_while && alldone
+
+## RPC vs. UDS
+
+PyNotify can run in two modes. In RPC mode, it listens on a tcp port for connections. This is bound to localhost by default but can easily be changed to allow other machines to send notifications to the machine running the server. This can obviously be an issue if your co-workers like to spam you. For this reason, PyNotify runs in UDS mode by default. In this mode, it creates a file in your home directory and only users with write access to that file (ie you) can send notifications. The default file for this mode is `~/.pynotify.sock`.
 	
 ## Issues
 
